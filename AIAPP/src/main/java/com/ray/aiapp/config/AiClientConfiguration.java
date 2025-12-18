@@ -24,7 +24,7 @@ public class AiClientConfiguration {
                 .defaultSystem(properties.getSystemPrompt())
                 .defaultOptions(OpenAiChatOptions.builder()
                         .withModel(properties.getDefaultModel())
-                        .withTemperature(properties.getTemperature())
+                        .withTemperature((float) properties.getTemperature())
                         .withMaxTokens(properties.getMaxTokens())
                         .build())
                 .build();
