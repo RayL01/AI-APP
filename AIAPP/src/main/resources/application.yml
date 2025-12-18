@@ -1,0 +1,57 @@
+spring:
+  application:
+    name: aiapp
+  datasource:
+    url: jdbc:h2:mem:aiapp;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY:demo-placeholder}
+      base-url: https://api.openai.com/v1
+      chat:
+        options:
+          model: gpt-4o-mini
+          temperature: 0.2
+          max-tokens: 1024
+
+aiapp:
+  chat:
+    system-prompt: >-
+      You are AIAPP, a concise enterprise engineering pair-programmer.
+    default-model: gpt-4o-mini
+    temperature: 0.2
+    max-tokens: 1024
+  langchain:
+    enabled: true
+    api-key: ${OPENAI_API_KEY:demo-placeholder}
+    model: gpt-4o-mini
+    temperature: 0.2
+    max-tokens: 1024
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  level:
+    root: info
+    com.ray.aiapp: debug
