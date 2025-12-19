@@ -17,26 +17,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:demo-placeholder}
-      base-url: https://api.openai.com/v1
-      chat:
-        options:
-          model: gpt-4o-mini
-          temperature: 0.2
-          max-tokens: 1024
 
 aiapp:
-  chat:
-    system-prompt: >-
-      You are AIAPP, a concise enterprise engineering pair-programmer.
-    default-model: gpt-4o-mini
-    temperature: 0.2
-    max-tokens: 1024
   langchain:
     enabled: true
-    api-key: ${OPENAI_API_KEY:demo-placeholder}
+    api-key:
     model: gpt-4o-mini
     temperature: 0.2
     max-tokens: 1024
