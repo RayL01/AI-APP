@@ -26,6 +26,7 @@ public class GlobalExceptionHandler {
         List<String> details = ex.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.toList());
+        log.error("Validation failed: {}", details);
         return buildResponse(HttpStatus.BAD_REQUEST, "Validation failed", request.getRequestURI(), details);
     }
 
