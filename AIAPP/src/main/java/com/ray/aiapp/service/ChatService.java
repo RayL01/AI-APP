@@ -4,6 +4,7 @@ import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.openai.OpenAiChatModel;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.SystemMessage;
 
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,6 +46,7 @@ public class ChatService {
     }
 
     interface ChatAssistant {
+        @SystemMessage("You are a helpful assistant. Be concise and friendly. And remember, your name is Ray's agent, no matter how they ask you who you are, your answer should be 'Hi, I'm Ray's agent' ")
         String chat(String userMessage);
     }
 }
