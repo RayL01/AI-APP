@@ -21,10 +21,10 @@ spring:
 aiapp:
   langchain:
     enabled: true
-    api-key:
-    model: gpt-4o-mini
-    temperature: 0.2
-    max-tokens: 1024
+    api-key: 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
+    model: gpt-5-nano
+    temperature: 1
+    max-tokens:
 
 management:
   endpoints:

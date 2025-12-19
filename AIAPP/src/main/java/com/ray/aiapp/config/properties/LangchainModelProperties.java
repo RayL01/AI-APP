@@ -13,5 +13,5 @@ public class LangchainModelProperties {
     private String apiKey;
     private String model = "gpt-4o-mini";
     private double temperature = 0.2;
-    private int maxTokens = 1024;
+    private Integer maxTokens;
 }

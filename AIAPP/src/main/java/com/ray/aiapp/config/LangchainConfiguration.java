@@ -27,7 +27,6 @@ public class LangchainConfiguration {
                 .apiKey(properties.getApiKey())
                 .modelName(properties.getModel())
                 .temperature(properties.getTemperature())
-                .maxTokens(properties.getMaxTokens())
                 .build();
     }
 }
