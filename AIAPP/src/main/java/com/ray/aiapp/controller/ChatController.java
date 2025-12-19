@@ -1,7 +1,12 @@
 package com.ray.aiapp.controller;
 
-import dev.langchain4j.model.openai.OpenAiChatModel;
+import com.ray.aiapp.service.ChatService;
+import com.ray.aiapp.service.dto.ChatRequest;
+import com.ray.aiapp.service.dto.ChatResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,10 +17,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/chat")
 public class ChatController {
 
-    private final OpenAiChatModel chatModel;
+    private final ChatService chatService;
 
     @PostMapping
-    public String chat(@RequestBody String prompt) {
-        return chatModel.generate(prompt);
+    public ChatResponse chat(@Valid @RequestBody ChatRequest request) {
+        String response = chatService.chat(request.sessionId(), request.message());
+        return new ChatResponse(request.sessionId(), response);
+    }
+
+    @DeleteMapping("/{sessionId}")
+    public void clearMemory(@PathVariable String sessionId) {
+        chatService.clearMemory(sessionId);
     }
 }
