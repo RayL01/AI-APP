@@ -14,4 +14,17 @@ public class LangchainModelProperties {
     private String model = "gpt-4o-mini";
     private double temperature = 0.2;
     private Integer maxTokens;
+
+    private Rag rag = new Rag();
+
+    @Getter
+    @Setter
+    public static class Rag {
+        private boolean enabled = true;
+        private String embeddingModel = "text-embedding-3-small";
+        private int chunkSize = 500;
+        private int chunkOverlap = 50;
+        private int maxResults = 5;
+        private double minScore = 0.5;
+    }
 }
