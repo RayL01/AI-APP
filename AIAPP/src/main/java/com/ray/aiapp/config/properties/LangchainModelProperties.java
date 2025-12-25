@@ -16,6 +16,7 @@ public class LangchainModelProperties {
     private Integer maxTokens;
 
     private Rag rag = new Rag();
+    private WebSearch webSearch = new WebSearch();
 
     @Getter
     @Setter
@@ -26,5 +27,13 @@ public class LangchainModelProperties {
         private int chunkOverlap = 50;
         private int maxResults = 5;
         private double minScore = 0.5;
+    }
+
+    @Getter
+    @Setter
+    public static class WebSearch {
+        private boolean enabled = false;
+        private String apiKey;
+        private int maxResults = 5;
     }
 }
