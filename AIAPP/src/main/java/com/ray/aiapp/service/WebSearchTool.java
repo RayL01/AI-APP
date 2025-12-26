@@ -2,10 +2,14 @@ package com.ray.aiapp.service;
 
 import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.web.search.WebSearchEngine;
+import dev.langchain4j.web.search.WebSearchOrganicResult;
+import dev.langchain4j.web.search.WebSearchRequest;
 import dev.langchain4j.web.search.WebSearchResults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * Web search tool that can be used by AI agents to search the internet.
@@ -39,17 +43,29 @@ public class WebSearchTool {
     public String searchWeb(String query) {
         log.info("Web search requested: {}", query);
 
-        // TODO(human): Implement the search logic here
-        // Step 1: Call searchEngine.search(query, maxResults) to get WebSearchResults
-        // Step 2: Extract organic results from WebSearchResults using .results()
-        // Step 3: Format the results into a readable string with titles, snippets, and URLs
-        // Step 4: Handle the case when no results are found
-        // Step 5: Return the formatted string
-        //
-        // Hint: WebSearchResults has a method results() that returns List<WebSearchOrganicResult>
-        // Each result has: title(), snippet(), url()
-        // Format like: "1. [Title](URL)\n   Snippet\n\n2. [Title](URL)\n   Snippet..."
+        WebSearchRequest webSearchRequest = WebSearchRequest.builder()
+                .searchTerms(query)
+                .maxResults(maxResults)
+                .build();
 
-        throw new UnsupportedOperationException("TODO: Implement web search logic");
+        WebSearchResults webSearchResults = searchEngine.search(webSearchRequest);
+
+        if (webSearchResults.results().isEmpty()) {
+            log.warn("No search results found for query: {}", query);
+            return "No results found for: " + query;
+        }
+
+        log.info("Found {} search results for query: {}", webSearchResults.results().size(), query);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < webSearchResults.results().size(); i++) {
+            WebSearchOrganicResult result = webSearchResults.results().get(i);
+            sb.append(i + 1).append(". [")
+                    .append(result.title()).append("](")
+                    .append(result.url()).append(")\n   ")
+                    .append(result.snippet())
+                    .append("\n\n");
+        }
+        return sb.toString();
     }
 }

@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -32,7 +34,12 @@ public class SearchChatService {
 
     public String chat(String sessionId, String userMessage) {
         SearchChatAssistant assistant = assistants.computeIfAbsent(sessionId, this::createAssistant);
-        String response = assistant.chat(userMessage);
+
+        // Inject current date context so AI knows what "today" means
+        String currentDate = LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, MMMM d, yyyy"));
+        String contextualMessage = String.format("[Current date: %s]\n%s", currentDate, userMessage);
+
+        String response = assistant.chat(contextualMessage);
         log.debug("Session {}: user='{}', assistant='{}'", sessionId, userMessage, response);
         return response;
     }
@@ -47,25 +54,16 @@ public class SearchChatService {
                 .maxMessages(40)
                 .build();
 
-        // TODO(human): Integrate the WebSearchTool with AiServices
-        // Step 1: Use AiServices.builder(SearchChatAssistant.class)
-        // Step 2: Add the chatLanguageModel (already available as this.chatModel)
-        // Step 3: Add the chatMemory (already created above as 'memory')
-        // Step 4: IMPORTANT: Register the webSearchTool using .tools(webSearchTool)
-        //         This is the key line that gives the AI access to web search
-        // Step 5: Call .build() to create the assistant
-        //
-        // Hint: This should look very similar to ChatService.createAssistant()
-        // but with one extra line: .tools(webSearchTool)
-        //
-        // The AI will automatically decide when to use the search tool based on
-        // the @Tool annotation description in WebSearchTool
-
-        throw new UnsupportedOperationException("TODO: Implement AI service creation with tool integration");
+        return AiServices.builder(SearchChatAssistant.class)
+                .chatLanguageModel(chatModel)
+                .chatMemory(memory)
+                .tools(webSearchTool)
+                .build();
     }
 
     interface SearchChatAssistant {
         @SystemMessage("You are a helpful AI assistant with access to real-time web search. " +
+                      "The current date will be provided at the start of each user message - pay attention to it when they ask about 'today', 'now', or current events. " +
                       "When users ask about current events, recent information, weather, " +
                       "stock prices, or anything that requires up-to-date data, " +
                       "use the web search tool to find accurate information. " +
