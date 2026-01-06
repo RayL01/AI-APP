@@ -5,11 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Table(name = "documents")
@@ -31,10 +27,10 @@ public class Document extends AbstractAuditableEntity {
     private DocumentType documentType;
 
     @Column(nullable = false)
-    private long fileSize;
+    private Long fileSize;
 
     @Column(nullable = false)
-    private int chunkCount;
+    private Integer chunkCount;
 
     @Column(length = 1000)
     private String description;

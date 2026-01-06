@@ -24,5 +24,5 @@ public class AssistantProfile extends AbstractAuditableEntity {
     private String model;
 
     @Column(nullable = false)
-    private double temperature;
+    private Double temperature;
 }
