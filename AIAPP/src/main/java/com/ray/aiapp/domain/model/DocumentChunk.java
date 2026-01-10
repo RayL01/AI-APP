@@ -60,7 +60,7 @@ public class DocumentChunk extends AbstractAuditableEntity {
      * Dimension: 1536 for text-embedding-3-small (OpenAI)
      */
     @Convert(converter = VectorAttributeConverter.class)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "vector(1536)")
     private float[] embedding;
 
     /**

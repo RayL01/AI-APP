@@ -48,11 +48,11 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
      */
     @Query(value = """
         SELECT
-            (1 - (embedding <=> CAST(:queryEmbedding AS vector))) AS score,
-            embbeding_id,
+            embedding_id AS embeddingId,
             text,
-            embedding,
-            metadata
+            metadata,
+            embedding::text AS embedding,
+            (1 - (embedding <=> CAST(:queryEmbedding AS vector))) AS score
         FROM document_chunks
         WHERE (1 - (embedding <=> CAST(:queryEmbedding AS vector))) >= :minScore
         ORDER BY embedding <=> CAST(:queryEmbedding AS vector)
