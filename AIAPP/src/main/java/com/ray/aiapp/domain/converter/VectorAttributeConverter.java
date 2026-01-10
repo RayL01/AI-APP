@@ -43,12 +43,24 @@ public class VectorAttributeConverter implements AttributeConverter<float[], Str
      */
     @Override
     public float[] convertToEntityAttribute(String dbData) {
-        if (dbData == null || dbData.isEmpty()) {
+        return parseVector(dbData);
+    }
+
+    /**
+     * Static method to parse PostgreSQL vector string to float[].
+     * Can be called directly without instantiating the converter.
+     * Useful for Interface Projection results where @Convert doesn't apply.
+     *
+     * @param vectorString the vector string from database, e.g. "[0.1,0.2,0.3]"
+     * @return float array representation of the vector
+     */
+    public static float[] parseVector(String vectorString) {
+        if (vectorString == null || vectorString.isEmpty()) {
             return new float[0];
         }
 
         // Remove brackets and split by comma
-        String cleaned = dbData.replace("[", "").replace("]", "");
+        String cleaned = vectorString.replace("[", "").replace("]", "");
         if (cleaned.isEmpty()) {
             return new float[0];
         }
@@ -61,5 +73,28 @@ public class VectorAttributeConverter implements AttributeConverter<float[], Str
         }
 
         return result;
+    }
+
+    /**
+     * Static method to convert float[] to PostgreSQL vector string format.
+     * Can be called directly without instantiating the converter.
+     *
+     * @param vector the float array to convert
+     * @return vector string format, e.g. "[0.1,0.2,0.3]"
+     */
+    public static String toVectorString(float[] vector) {
+        if (vector == null || vector.length == 0) {
+            return "[]";
+        }
+
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < vector.length; i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            sb.append(vector[i]);
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }

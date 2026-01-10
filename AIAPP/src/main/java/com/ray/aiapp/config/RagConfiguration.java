@@ -7,7 +7,6 @@ import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
 import dev.langchain4j.store.embedding.EmbeddingStore;
-import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,11 +30,8 @@ public class RagConfiguration {
                 .build();
     }
 
-    @Bean
-    public EmbeddingStore<TextSegment> embeddingStore() {
-        log.info("Creating in-memory embedding store");
-        return new InMemoryEmbeddingStore<>();
-    }
+    // EmbeddingStore bean is provided by PgVectorEmbeddingStore @Component
+    // No longer using InMemoryEmbeddingStore
 
     @Bean
     public ContentRetriever contentRetriever(EmbeddingStore<TextSegment> embeddingStore,

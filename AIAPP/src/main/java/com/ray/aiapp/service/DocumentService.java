@@ -15,6 +15,7 @@ import dev.langchain4j.data.document.splitter.DocumentSplitters;
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
@@ -81,8 +82,11 @@ public class DocumentService {
 
             List<TextSegment> segments = splitter.split(langchainDoc);
 
-            // Manually embed and store each segment to get exact count
-            for (TextSegment segment : segments) {
+            // Manually embed and store each segment with chunkIndex
+            for (int i = 0; i < segments.size(); i++) {
+                TextSegment segment = segments.get(i);
+                // Add chunkIndex to metadata for proper ordering
+                segment.metadata().put("chunkIndex", i);
                 embeddingStore.add(embeddingModel.embed(segment).content(), segment);
             }
 
@@ -130,6 +134,13 @@ public class DocumentService {
         if (!documentRepository.existsById(documentId)) {
             throw new ResourceNotFoundException("Document not found: " + documentId);
         }
+
+        // Delete vector embeddings first (if using PgVectorEmbeddingStore)
+        if (embeddingStore instanceof PgVectorEmbeddingStore pgVectorStore) {
+            pgVectorStore.deleteByDocumentId(documentId.toString());
+            log.info("Deleted vector embeddings for document {}", documentId);
+        }
+
         documentRepository.deleteById(documentId);
         log.info("Document {} deleted from database", documentId);
     }

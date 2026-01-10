@@ -1,6 +1,7 @@
 package com.ray.aiapp.repository;
 
 import com.ray.aiapp.domain.model.DocumentChunk;
+import com.ray.aiapp.service.dto.chatWithScore;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -46,12 +47,18 @@ public interface DocumentChunkRepository extends JpaRepository<DocumentChunk, UU
      * @return list of chunks ordered by similarity (most similar first)
      */
     @Query(value = """
-        SELECT * FROM document_chunks
+        SELECT
+            (1 - (embedding <=> CAST(:queryEmbedding AS vector))) AS score,
+            embbeding_id,
+            text,
+            embedding,
+            metadata
+        FROM document_chunks
         WHERE (1 - (embedding <=> CAST(:queryEmbedding AS vector))) >= :minScore
         ORDER BY embedding <=> CAST(:queryEmbedding AS vector)
         LIMIT :maxResults
         """, nativeQuery = true)
-    List<DocumentChunk> findSimilarChunks(
+    List<chatWithScore> findSimilarChunks(
             @Param("queryEmbedding") String queryEmbedding,
             @Param("maxResults") int maxResults,
             @Param("minScore") double minScore

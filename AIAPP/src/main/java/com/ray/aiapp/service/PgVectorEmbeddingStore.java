@@ -15,9 +15,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * Custom EmbeddingStore implementation using PostgreSQL with pgvector extension.
@@ -29,10 +29,8 @@ import java.util.stream.Collectors;
 public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
 
     private final DocumentChunkRepository chunkRepository;
+    private final ChunkService chunkService;
     private final ObjectMapper objectMapper = new ObjectMapper();
-
-    // Thread-safe counter for generating embedding IDs within a document
-    private final AtomicInteger chunkCounter = new AtomicInteger(0);
 
     @Override
     @Transactional
@@ -50,9 +48,9 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
                 .embeddingId(embeddingId)
                 .documentId("unknown")
                 .text("")
-                .embedding(toFloatArray(embedding.vector()))
+                .embedding(embedding.vector())
                 .metadata("{}")
-                .chunkIndex(chunkCounter.getAndIncrement())
+                .chunkIndex(0)  // Default to 0 for edge case
                 .build();
 
         chunkRepository.save(chunk);
@@ -63,16 +61,19 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
     @Transactional
     public String add(Embedding embedding, TextSegment textSegment) {
         String embeddingId = UUID.randomUUID().toString();
-        add(embeddingId, embedding, textSegment);
-        return embeddingId;
-    }
 
-    @Override
-    @Transactional
-    public void add(String embeddingId, Embedding embedding, TextSegment textSegment) {
         // Extract metadata
-        String documentId = textSegment.metadata().getString("documentId", "unknown");
-        int chunkIndex = textSegment.metadata().getInteger("chunkIndex", chunkCounter.getAndIncrement());
+        String documentId = textSegment.metadata().getString("documentId");
+        if (documentId == null) {
+            documentId = "unknown";
+        }
+
+        // chunkIndex must be provided by caller via metadata
+        Integer chunkIndex = textSegment.metadata().getInteger("chunkIndex");
+        if (chunkIndex == null) {
+            chunkIndex = 0;
+            log.warn("chunkIndex not provided in metadata, defaulting to 0");
+        }
 
         String metadataJson;
         try {
@@ -86,13 +87,15 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
                 .embeddingId(embeddingId)
                 .documentId(documentId)
                 .text(textSegment.text())
-                .embedding(toFloatArray(embedding.vector()))
+                .embedding(embedding.vector())
                 .metadata(metadataJson)
                 .chunkIndex(chunkIndex)
                 .build();
 
         chunkRepository.save(chunk);
         log.debug("Added text segment {} to vector store for document {}", embeddingId, documentId);
+
+        return embeddingId;
     }
 
     @Override
@@ -100,7 +103,7 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
     public List<String> addAll(List<Embedding> embeddings) {
         return embeddings.stream()
                 .map(this::add)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -118,30 +121,26 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
         return embeddingIds;
     }
 
-    // TODO(human): Implement the search method
-    // This is the core method for vector similarity search
+
     @Override
     @Transactional(readOnly = true)
     public EmbeddingSearchResult<TextSegment> search(EmbeddingSearchRequest request) {
-        // TODO(human): Extract search parameters from request
-        // - Get the query embedding
-        // - Get maxResults (how many similar chunks to return)
-        // - Get minScore (minimum similarity threshold)
 
-        // TODO(human): Convert the embedding to a format suitable for the database query
-        // Hint: You need to convert float[] to a PostgreSQL array string format like '[0.1,0.2,0.3]'
+        Embedding queryEmbedding = request.queryEmbedding();
+        int maxResults = request.maxResults();
+        double minScore = request.minScore();
 
-        // TODO(human): Call the repository method to find similar chunks
+        log.info("Searching for {} similar chunks with minScore {}", maxResults, minScore);
 
-        // TODO(human): Convert DocumentChunk results to EmbeddingMatch<TextSegment>
-        // For each chunk:
-        //   1. Calculate the similarity score (1 - cosine_distance)
-        //   2. Reconstruct the TextSegment from chunk.text and chunk.metadata
-        //   3. Create an EmbeddingMatch with the score, embeddingId, embedding, and textSegment
+        // Delegate to ChunkService which handles:
+        // 1. Vector string conversion
+        // 2. Repository query (Interface Projection)
+        // 3. String embedding -> float[] conversion
+        // 4. EmbeddingMatch construction
+        List<EmbeddingMatch<TextSegment>> matches = chunkService.searchSimilarChunks(
+                queryEmbedding.vector(), maxResults, minScore);
 
-        // TODO(human): Return EmbeddingSearchResult with the matches
-
-        throw new UnsupportedOperationException("Search method not implemented yet");
+        return new EmbeddingSearchResult<>(matches);
     }
 
     /**
@@ -151,34 +150,5 @@ public class PgVectorEmbeddingStore implements EmbeddingStore<TextSegment> {
     public void deleteByDocumentId(String documentId) {
         chunkRepository.deleteByDocumentId(documentId);
         log.info("Deleted all chunks for document {}", documentId);
-    }
-
-    /**
-     * Convert double array to float array.
-     */
-    private float[] toFloatArray(float[] doubleArray) {
-        return doubleArray;
-    }
-
-    /**
-     * Convert float array to PostgreSQL vector string format.
-     * Example: [0.1, 0.2, 0.3] -> "[0.1,0.2,0.3]"
-     */
-    private String toVectorString(float[] vector) {
-        return "[" + Arrays.stream(vector)
-                .mapToObj(String::valueOf)
-                .collect(Collectors.joining(",")) + "]";
-    }
-
-    /**
-     * Reconstruct metadata map from JSON string.
-     */
-    private Map<String, Object> parseMetadata(String metadataJson) {
-        try {
-            return objectMapper.readValue(metadataJson, Map.class);
-        } catch (JsonProcessingException e) {
-            log.warn("Failed to parse metadata JSON: {}", e.getMessage());
-            return new HashMap<>();
-        }
     }
 }
